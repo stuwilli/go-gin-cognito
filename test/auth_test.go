@@ -59,7 +59,7 @@ func TestValidateToken(t *testing.T) {
 	t.Run("should return true with no error", func(t *testing.T) {
 		// Initiate your struct
 
-		a := auth.NewCognitoAuth(region, userPoolID)
+		a, _ := auth.NewCognitoAuth(region, userPoolID)
 		println(a.JWK)
 		// Use a valid token, this is a mock token, replace with a real one for testing
 		ok, err := a.ValidateToken(getToken(), "trafficker")
@@ -73,7 +73,7 @@ func TestValidateToken(t *testing.T) {
 
 	t.Run("should return false with an error", func(t *testing.T) {
 		// Initiate your struct
-		a := auth.NewCognitoAuth(region, userPoolID)
+		a, _ := auth.NewCognitoAuth(region, userPoolID)
 
 		// Invalid token
 		ok, err := a.ValidateToken(invalidToken)

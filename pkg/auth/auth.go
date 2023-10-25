@@ -18,7 +18,7 @@ type CognitoAuth struct {
 	JWK        jwk.Set
 }
 
-func NewCognitoAuth(region, userPoolID string) *CognitoAuth {
+func NewCognitoAuth(region, userPoolID string) (*CognitoAuth, error) {
 
 	url := "https://cognito-idp." + region + ".amazonaws.com/" + userPoolID + "/.well-known/jwks.json"
 
@@ -27,13 +27,19 @@ func NewCognitoAuth(region, userPoolID string) *CognitoAuth {
 	// Create a new cache
 	cache := jwk.NewCache(ctx)
 	// Register the cache to the default registry
-	_ = cache.Register(url, jwk.WithMinRefreshInterval(15*time.Minute))
+	err := cache.Register(url, jwk.WithMinRefreshInterval(15*time.Minute))
+
+	if err != nil {
+		log.Printf("JWKS URL could not be registered: %s", err)
+		return nil, err
+	}
+
 	// Fetch the JWKs from the remote server
-	_, err := cache.Refresh(ctx, url)
+	_, err = cache.Refresh(ctx, url)
 
 	if err != nil {
 		log.Printf("Failed to refresh google JWKS: %s", err)
-		return nil
+		return nil, err
 	}
 	// Create a JWK Set for the given URL
 	set := jwk.NewCachedSet(cache, url)
@@ -43,7 +49,7 @@ func NewCognitoAuth(region, userPoolID string) *CognitoAuth {
 		UserPoolID: userPoolID,
 		JWKSetUrl:  url,
 		JWK:        set,
-	}
+	}, nil
 }
 
 // ValidateToken validates a token and returns true if the token is valid
@@ -103,12 +109,32 @@ func containsGroup(tokenGroups []interface{}, requiredGroups []string) bool {
 	return false
 }
 
+// parseBearerToken parses the bearer token from the Authorization header
+func parseBearerToken(authHeader string) (string, error) {
+	if len(authHeader) < 8 {
+		return "", errors.New("invalid authorization header")
+	}
+
+	if authHeader[:7] != "Bearer " {
+		return "", errors.New("invalid authorization header")
+	}
+
+	return authHeader[7:], nil
+}
+
 // CognitoMiddleware is a Gin middleware that checks if the user is authenticated
 func (a *CognitoAuth) CognitoMiddleware(groups ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
-		result, err := a.ValidateToken(authHeader, groups...)
+		token, err := parseBearerToken(authHeader)
+		if err != nil {
+			log.Printf("Error parsing bearer token: %s", err)
+			c.AbortWithStatus(401)
+			return
+		}
+		result, err := a.ValidateToken(token, groups...)
 		if err != nil || !result {
+			log.Printf("Error validating token: %s", err)
 			c.AbortWithStatus(401)
 			return
 		}
