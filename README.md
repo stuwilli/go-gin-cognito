@@ -1,5 +1,18 @@
 # Go Gin Cognito JWT Auth Middleware
 
+### Testing
+There is a basic test suite which requires some environment variables to be set. You can set them in a `.env` file in the root of the project. The following variables are required:
+
+```bash
+AWS_REGION=
+AWS_COGNITO_POOL_ID=
+AWS_COGNITO_CLIENT_ID=
+TEST_COGNITO_USERNAME=
+TEST_COGNITO_PASSWORD=
+```
+
+### Example Usage
+
 ```go
 package main
 
