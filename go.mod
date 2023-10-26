@@ -1,4 +1,5 @@
-module go-gin-cognito
+module github.com/stuwilli/go-gin-cognito
+
 
 go 1.21
 
