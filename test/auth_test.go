@@ -6,7 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
 	"github.com/joho/godotenv"
-	"go-gin-cognito/pkg/auth"
+	"github.com/stuwilli/go-gin-cognito/pkg/auth"
 	"os"
 	"testing"
 )
@@ -61,11 +61,11 @@ func TestValidateToken(t *testing.T) {
 		// Initiate your struct
 		a, _ := auth.NewCognitoAuth(os.Getenv("AWS_REGION"), os.Getenv("AWS_COGNITO_POOL_ID"))
 		// Use a valid token, this is a mock token, replace with a real one for testing
-		ok, err := a.ValidateToken(getToken(), "trafficker")
+		token, err := a.ValidateToken(getToken(), "trafficker")
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
-		if !ok {
+		if token == nil {
 			t.Errorf("Expected token to be valid, but got false")
 		}
 	})
@@ -75,11 +75,11 @@ func TestValidateToken(t *testing.T) {
 		a, _ := auth.NewCognitoAuth(os.Getenv("AWS_REGION"), os.Getenv("AWS_COGNITO_POOL_ID"))
 
 		// Invalid token
-		ok, err := a.ValidateToken(invalidToken)
+		token, err := a.ValidateToken(invalidToken)
 		if err == nil {
 			t.Errorf("Expected error, but got none")
 		}
-		if ok {
+		if token != nil {
 			t.Errorf("Expected token to be invalid, but got true")
 		}
 	})
